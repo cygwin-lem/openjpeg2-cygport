@@ -1,0 +1,53 @@
+inherit cmake
+
+NAME="openjpeg2"
+VERSION=2.1.0
+RELEASE=1
+CATEGORY="Libs"
+SUMMARY="JPEG 2000 codec"
+DESCRIPTION="The OpenJPEG library is an open-source JPEG 2000 codec written
+in C language. It has been developed in order to promote the use of JPEG 2000,
+the new still-image compression standard from the Joint Photographic Experts
+Group (JPEG)."
+HOMEPAGE="http://www.openjpeg.org/"
+SRC_URI="https://github.com/uclouvain/openjpeg/archive/version.${VERSION%.0}/openjpeg-version.${VERSION%.0}.tar.gz"
+SRC_DIR="openjpeg-version.${VERSION%.0}"
+PATCH_URI="
+	http://pkgs.fedoraproject.org/cgit/openjpeg2.git/plain/openjpeg2_remove-thirdparty.patch
+	http://pkgs.fedoraproject.org/cgit/openjpeg2.git/plain/openjpeg2_bigendian.patch
+	http://pkgs.fedoraproject.org/cgit/openjpeg2.git/plain/940100c28ae28931722290794889cf84a92c5f6f.patch
+	http://pkgs.fedoraproject.org/cgit/openjpeg2.git/plain/0fa5a17c98c4b8f9ee2286f4f0a50cf52a5fccb0.patch
+	2.1.0-cmake-install.patch
+"
+
+PKG_NAMES="${NAME} libopenjp2_7 libopenjp2-devel libopenjp2-doc"
+openjpeg2_CATEGORY="Graphics"
+openjpeg2_SUMMARY="JPEG 2000 utilities"
+openjpeg2_CONTENTS="--exclude=html usr/bin/*.exe usr/share/doc/ usr/share/man/man1/"
+libopenjp2_7_SUMMARY="${SUMMARY} (runtime)"
+libopenjp2_7_CONTENTS="usr/bin/cygopenjp2-7.dll"
+libopenjp2_devel_SUMMARY="${SUMMARY} (development)"
+libopenjp2_devel_CONTENTS="usr/include/ usr/lib/ usr/share/man/man3/"
+libopenjp2_doc_CATEGORY="Doc"
+libopenjp2_doc_SUMMARY="${SUMMARY} (API documentation)"
+libopenjp2_doc_CONTENTS="usr/share/doc/${NAME}/html/"
+
+CYGPORT_USE_UNSTABLE_API=1
+src_unpack_hook() {
+	rm -fr thirdparty/
+}
+
+CYGCMAKE_ARGS="
+	-DOPENJPEG_INSTALL_DOC_DIR=share/doc/${NAME}
+	${NOTYET+-DBUILD_MJ2=ON -DBUILD_JPWL=ON -DBUILD_JPIP=ON -DBUILD_JP3D=ON}
+	-DBUILD_DOC=ON
+"
+
+src_install() {
+	cd ${B}
+	cyginstall
+
+	# openjpeg-1.x utils are not prefixed by opj_
+#	rename opj_ opj2_ ${D}/usr/bin/opj_* ${D}/usr/share/man/man1/opj_*
+#	sed -i -e 's/opj_/opj2_/g' ${D}/usr/share/man/man1/opj2_*
+}
