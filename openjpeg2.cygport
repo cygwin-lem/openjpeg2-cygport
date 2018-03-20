@@ -1,7 +1,7 @@
 inherit cmake
 
 NAME="openjpeg2"
-VERSION=2.2.0
+VERSION=2.3.0
 RELEASE=1
 CATEGORY="Libs"
 SUMMARY="JPEG 2000 codec"
@@ -13,7 +13,7 @@ HOMEPAGE="http://www.openjpeg.org/"
 SRC_URI="https://github.com/uclouvain/openjpeg/archive/v${VERSION}/openjpeg-v${VERSION}.tar.gz"
 SRC_DIR="openjpeg-${VERSION}"
 PATCH_URI="
-	http://pkgs.fedoraproject.org/cgit/openjpeg2.git/plain/openjpeg2_remove-thirdparty.patch
+	https://src.fedoraproject.org/cgit/rpms/openjpeg2.git/plain/openjpeg2_remove-thirdparty.patch
 	2.1.0-cmake-install.patch
 "
 
@@ -39,12 +39,3 @@ CYGCMAKE_ARGS="
 	${NOTYET+-DBUILD_MJ2=ON -DBUILD_JPWL=ON -DBUILD_JPIP=ON -DBUILD_JP3D=ON}
 	-DBUILD_DOC=ON
 "
-
-src_install() {
-	cd ${B}
-	cyginstall
-
-	# openjpeg-1.x utils are not prefixed by opj_
-#	rename opj_ opj2_ ${D}/usr/bin/opj_* ${D}/usr/share/man/man1/opj_*
-#	sed -i -e 's/opj_/opj2_/g' ${D}/usr/share/man/man1/opj2_*
-}
