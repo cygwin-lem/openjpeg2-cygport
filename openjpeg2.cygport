@@ -1,7 +1,7 @@
-inherit cmake
+inherit cmake ninja
 
 NAME="openjpeg2"
-VERSION=2.3.0
+VERSION=2.3.1p113
 RELEASE=1
 CATEGORY="Libs"
 SUMMARY="JPEG 2000 codec"
@@ -10,13 +10,72 @@ in C language. It has been developed in order to promote the use of JPEG 2000,
 the new still-image compression standard from the Joint Photographic Experts
 Group (JPEG)."
 HOMEPAGE="http://www.openjpeg.org/"
-SRC_URI="https://github.com/uclouvain/openjpeg/archive/v${VERSION}/openjpeg-v${VERSION}.tar.gz"
-SRC_DIR="openjpeg-${VERSION}"
-PATCH_URI="
-	https://src.fedoraproject.org/cgit/rpms/openjpeg2.git/plain/openjpeg2_remove-thirdparty.patch
+
+################################
+## Source from a git repository
+################################
+GIT_REPO="https://github.com/uclouvain/openjpeg"
+declare -A GIT_DATEHASH_BY_NAME=(
+  # git log -1 --date=iso-strict --format='%cd/%H'
+  [2.3.1p113]=2020-12-10T15:55:41+01:00/98a4c5c3709e0cc43b0a1c151ed5bd85a2d607fa
+  [2.3.1]=2019-04-02T14:45:15+02:00/57096325457f96d8cd07bd3af04fe81d7a2ba788
+)
+REV_HASH="${GIT_DATEHASH_BY_NAME[${VERSION}]#*/}"
+REV_DATE="${GIT_DATEHASH_BY_NAME[${VERSION}]%/*}"
+REV_DATE_SHORT="${GIT_DATEHASH_BY_NAME[${VERSION}]%T*}"
+GIT_BASENAME="${GIT_REPO##*/}"
+SRC_URI="${GIT_REPO}/archive/${REV_HASH}.tar.gz"   # GitHub
+#SRC_URI="${GIT_REPO}/-/archive/${REV_HASH}/${GIT_BASENAME}-${REV_HASH}.tar.bz2" # GitLab
+SRC_DIR="${GIT_BASENAME}-${REV_HASH}"
+
+TEST_OPJ_DATA_URI="https://github.com/uclouvain/openjpeg-data/archive/master.tar.gz"
+TEST_OPJ_DATA_DIR="openjpeg-data-master"
+
+################################
+## Patch files
+################################
+# Patch filenames are in a default style of 'git format-patch'
+PATCH_URI=$(\
+  find -maxdepth 1 -type f -name '[0-9][0-9][0-9][0-9]-*.patch' \
+  | sort \
+)
+# Additional patches, if any
+PATCH_URI+="
 	2.1.0-cmake-install.patch
 "
 
+################################
+## Requirements for building
+################################
+BUILD_REQUIRES="\
+	cmake\
+	ninja\
+	pkg-config\
+	doxygen\
+	zlib-devel\
+	libpng-devel\
+	libtiff-devel\
+	liblcms2-devel\
+	wget\
+"
+
+################################
+## Settings for CMake
+################################
+CYGCMAKE_ARGS="
+	-DOPENJPEG_INSTALL_DOC_DIR:PATH=share/doc/${NAME}
+	${NOTYET+-DBUILD_MJ2=ON -DBUILD_JPWL=ON -DBUILD_JPIP=ON -DBUILD_JP3D=ON}
+	-DBUILD_DOC:BOOL=ON
+	-DWITH_ASTYLE:BOOL=ON
+"
+
+#if [ x"${CMAKE_BUILD_PARALLEL_LEVEL}" = x"" ]; then
+#	CYGCMAKE_ARGS+=" -j $(($(nproc 2>/dev/null) + 1)) "
+#fi
+
+################################
+## Contents of our packages
+################################
 PKG_NAMES="${NAME} libopenjp2_7 libopenjp2-devel libopenjp2-doc"
 openjpeg2_CATEGORY="Graphics"
 openjpeg2_SUMMARY="JPEG 2000 utilities"
@@ -29,13 +88,90 @@ libopenjp2_doc_CATEGORY="Doc"
 libopenjp2_doc_SUMMARY="${SUMMARY} (API documentation)"
 libopenjp2_doc_CONTENTS="usr/share/doc/${NAME}/html/"
 
-CYGPORT_USE_UNSTABLE_API=1
-src_unpack_hook() {
-	rm -fr thirdparty/
+################################
+## Test
+################################
+CYGCMAKE_ARGS+="
+	-DBUILD_TESTING:BOOL=ON
+	-DOPJ_DATA_ROOT:PATH=${top}/${TEST_OPJ_DATA_DIR}
+"
+
+#if [ x"${CTEST_PARALLEL_LEVEL}" = x"" ]; then
+#	CYGCTEST_JOBS=" -j $(($(nproc 2>/dev/null) + 1)) "
+#fi
+
+__setup_test_opj_data () {
+	cd ${top}
+	if [ ! -d "${TEST_OPJ_DATA_DIR}" ]; then
+		if [ ! -f "${TEST_OPJ_DATA_URI##*/}" ]; then
+			inform "Downloading openjpeg-data: ${TEST_OPJ_DATA_URI}"
+			wget -nv "${TEST_OPJ_DATA_URI}" -O "${TEST_OPJ_DATA_URI##*/}.tmp" \
+			|| error "Failed to download ${TEST_OPJ_DATA_URI}"
+			mv "${TEST_OPJ_DATA_URI##*/}.tmp" "${TEST_OPJ_DATA_URI##*/}"
+		fi
+
+		inform "Expanding ${TEST_OPJ_DATA_URI##*/}"
+		tar -zxvf "${TEST_OPJ_DATA_URI##*/}"
+
+		# Since cmake generates incomplete tests without openjpeg-data,
+		# we need to rerun cmake after expanding it, in order to set up
+		# complete tests.
+		inform "Running cmake again for complete tests"
+		cd ${B}
+		: ${CYGCMAKE_GENERATOR=Ninja}
+		cygcmake
+	fi
 }
 
-CYGCMAKE_ARGS="
-	-DOPENJPEG_INSTALL_DOC_DIR=share/doc/${NAME}
-	${NOTYET+-DBUILD_MJ2=ON -DBUILD_JPWL=ON -DBUILD_JPIP=ON -DBUILD_JP3D=ON}
-	-DBUILD_DOC=ON
-"
+__check_knownfailures () {
+	local FAILED="${B}/Testing/Temporary/LastTestsFailed.log"
+
+	local -a KNOWN__x86_64=(
+		${S}/tools/travis-ci/knownfailures-all.txt
+	)
+	local -a KNOWN__i686=(
+		${S}/tools/travis-ci/knownfailures-all.txt
+		${S}/tools/travis-ci/knownfailures-Ubuntu14.04-gcc4.8.4-i386-Release-3rdP.txt
+	)
+	local -n VKNOWN="KNOWN__${ARCH}"
+
+	local FAILED_COUNT=$(wc -l < "${FAILED}")
+	local KNOWN_COUNT=$(\
+		cat < /dev/null \
+		  "${VKNOWN[@]}" \
+		| sort -u | wc -l \
+	)
+	local UNION_COUNT=$(
+		cat < /dev/null \
+		  "${VKNOWN[@]}" \
+		  <(sed -e 's/^[0-9]*://' "${FAILED}") \
+		| sort -u | wc -l \
+	)
+	local FAILED_KNOWN_COUNT=$((FAILED_COUNT+KNOWN_COUNT-UNION_COUNT))
+	local FAILED_UNKNOWN_COUNT=$((UNION_COUNT-KNOWN_COUNT))
+
+	inform "About known failures (total ${KNOWN_COUNT}), see the file$( ((${#VKNOWN} > 1 )) && echo s ) below:"
+	for EACH_KNOWN in "${VKNOWN[@]}"; do
+		printf "  %s\n" "${EACH_KNOWN#${S}/}"
+	done
+
+	warning "Failed tests: ${FAILED_COUNT}"
+	printf "  %s\n" "Known failures: $((FAILED_KNOWN_COUNT))"
+	printf "  %s\n" "Unknown failures: $((FAILED_UNKNOWN_COUNT))"
+
+        if (( FAILED_UNKNOWN_COUNT == 0 )); then
+		warning "It seems an acceptable result that we've got no unknown failure."
+	elif (( FAILED_UNKNOWN_COUNT == 1 )); then
+		error "We've got an unknown failure."
+	else
+		error "We've got ${FAILED_UNKNOWN_COUNT} unknown failures."
+	fi
+}
+
+src_test() {
+	__setup_test_opj_data
+	cd ${B}
+	ctest ${CYGCTEST_JOBS} || __check_knownfailures
+}
+
+################################
