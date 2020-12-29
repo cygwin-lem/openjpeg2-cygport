@@ -1,0 +1,8 @@
+category: Graphics
+requires: cygwin libgcc1 liblcms2_2 libopenjp2_7 libpng16 libtiff6 
+sdesc: "JPEG 2000 utilities"
+ldesc: "The OpenJPEG library is an open-source JPEG 2000 codec written
+in C language. It has been developed in order to promote the use of JPEG 2000,
+the new still-image compression standard from the Joint Photographic Experts
+Group (JPEG)."
+test:
