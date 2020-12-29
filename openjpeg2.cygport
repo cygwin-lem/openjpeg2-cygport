@@ -1,7 +1,7 @@
 inherit cmake ninja
 
 NAME="openjpeg2"
-VERSION=2.3.1p113
+VERSION=2.4.0
 RELEASE=1
 CATEGORY="Libs"
 SUMMARY="JPEG 2000 codec"
@@ -17,6 +17,7 @@ HOMEPAGE="http://www.openjpeg.org/"
 GIT_REPO="https://github.com/uclouvain/openjpeg"
 declare -A GIT_DATEHASH_BY_NAME=(
   # git log -1 --date=iso-strict --format='%cd/%H'
+  [2.4.0]=2020-12-28T21:59:39+01:00/37ac30ceff6640bbab502388c5e0fa0bff23f505
   [2.3.1p113]=2020-12-10T15:55:41+01:00/98a4c5c3709e0cc43b0a1c151ed5bd85a2d607fa
   [2.3.1]=2019-04-02T14:45:15+02:00/57096325457f96d8cd07bd3af04fe81d7a2ba788
 )
@@ -41,7 +42,7 @@ PATCH_URI=$(\
 )
 # Additional patches, if any
 PATCH_URI+="
-	2.1.0-cmake-install.patch
+  2.4.0-cmake-install.patch
 "
 
 ################################
@@ -112,15 +113,15 @@ __setup_test_opj_data () {
 
 		inform "Expanding ${TEST_OPJ_DATA_URI##*/}"
 		tar -zxvf "${TEST_OPJ_DATA_URI##*/}"
-
-		# Since cmake generates incomplete tests without openjpeg-data,
-		# we need to rerun cmake after expanding it, in order to set up
-		# complete tests.
-		inform "Running cmake again for complete tests"
-		cd ${B}
-		: ${CYGCMAKE_GENERATOR=Ninja}
-		cygcmake
 	fi
+
+	# Since cmake generates incomplete tests without openjpeg-data,
+	# we need to rerun cmake after expanding it, in order to set up
+	# complete tests.
+	inform "Running cmake again for complete tests"
+	cd ${B}
+	: ${CYGCMAKE_GENERATOR=Ninja}
+	cygcmake
 }
 
 __check_knownfailures () {
