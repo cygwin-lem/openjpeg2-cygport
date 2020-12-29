@@ -124,6 +124,22 @@ __setup_test_opj_data () {
 	cygcmake
 }
 
+__clean_test_opj_data () {
+	# Remove test data
+	cd ${top}
+	inform "Removing openjpeg-data:"
+	inform "  ${TEST_OPJ_DATA_URI##*/}"
+	inform "  ${TEST_OPJ_DATA_DIR}"
+	rm -rf "${TEST_OPJ_DATA_URI##*/}" "${TEST_OPJ_DATA_DIR}"
+
+	# Remove temporary files generated during tests
+	cd ${B}
+	inform "Removing tests/conformance/Temporary/*"
+	rm -rf tests/conformance/Temporary/*
+	inform "Removing tests/nonregression/Temporary/*"
+	rm -rf tests/nonregression/Temporary/*
+}
+
 __check_knownfailures () {
 	local FAILED="${B}/Testing/Temporary/LastTestsFailed.log"
 
@@ -170,9 +186,22 @@ __check_knownfailures () {
 }
 
 src_test() {
+	local OK=1
+
+	# Set up test data
 	__setup_test_opj_data
+
+	# Do test
 	cd ${B}
-	ctest ${CYGCTEST_JOBS} || __check_knownfailures
+	( ctest ${CYGCTEST_JOBS} || __check_knownfailures ) && OK=0
+
+	# Remove test data after tests when running in a CI environment,
+	# so that the big test data should not be contained in artifacts.
+	if [ -n "${CI}" ]; then
+		__clean_test_opj_data
+	fi
+
+	return ${OK}
 }
 
 ################################
