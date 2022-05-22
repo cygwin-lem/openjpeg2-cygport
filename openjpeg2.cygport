@@ -1,7 +1,7 @@
 inherit cmake ninja
 
 NAME="openjpeg2"
-VERSION=2.4.0
+VERSION=2.5.0
 RELEASE=1
 CATEGORY="Libs"
 SUMMARY="JPEG 2000 codec"
@@ -17,19 +17,20 @@ HOMEPAGE="http://www.openjpeg.org/"
 GIT_REPO="https://github.com/uclouvain/openjpeg"
 declare -A GIT_DATEHASH_BY_NAME=(
   # git log -1 --date=iso-strict --format='%cd/%H'
+  [2.5.0]=2022-05-13T18:54:29+02:00/v2.5.0
   [2.4.0]=2020-12-28T21:59:39+01:00/37ac30ceff6640bbab502388c5e0fa0bff23f505
   [2.3.1p113]=2020-12-10T15:55:41+01:00/98a4c5c3709e0cc43b0a1c151ed5bd85a2d607fa
   [2.3.1]=2019-04-02T14:45:15+02:00/57096325457f96d8cd07bd3af04fe81d7a2ba788
 )
 REV_HASH="${GIT_DATEHASH_BY_NAME[${VERSION}]#*/}"
-REV_DATE="${GIT_DATEHASH_BY_NAME[${VERSION}]%/*}"
-REV_DATE_SHORT="${GIT_DATEHASH_BY_NAME[${VERSION}]%T*}"
+REV_DATE="${GIT_DATEHASH_BY_NAME[${VERSION}]%%/*}"
+REV_DATE_SHORT="${REV_DATE%%T*}"
 GIT_BASENAME="${GIT_REPO##*/}"
-SRC_URI="${GIT_REPO}/archive/${REV_HASH}.tar.gz"   # GitHub
+SRC_URI="${GIT_REPO}/archive/${REV_HASH}/${GIT_BASENAME}-${REV_HASH}.tar.gz"
 #SRC_URI="${GIT_REPO}/-/archive/${REV_HASH}/${GIT_BASENAME}-${REV_HASH}.tar.bz2" # GitLab
-SRC_DIR="${GIT_BASENAME}-${REV_HASH}"
+SRC_DIR="${GIT_BASENAME}-${VERSION}"
 
-TEST_OPJ_DATA_URI="https://github.com/uclouvain/openjpeg-data/archive/master.tar.gz"
+TEST_OPJ_DATA_URI="https://github.com/uclouvain/openjpeg-data/archive/master/openjpeg-data-master.tar.gz"
 TEST_OPJ_DATA_DIR="openjpeg-data-master"
 
 ################################
@@ -42,7 +43,6 @@ PATCH_URI=$(\
 )
 # Additional patches, if any
 PATCH_URI+="
-  2.4.0-cmake-install.patch
 "
 
 ################################
@@ -149,6 +149,7 @@ __check_knownfailures () {
 	local -a KNOWN__i686=(
 		${S}/tools/travis-ci/knownfailures-all.txt
 		${S}/tools/travis-ci/knownfailures-Ubuntu14.04-gcc4.8.4-i386-Release-3rdP.txt
+		${S}/tools/travis-ci/knownfailures-windows-vs2010-x86-Release-3rdP.txt
 	)
 	local -n VKNOWN="KNOWN__${ARCH}"
 
@@ -167,7 +168,7 @@ __check_knownfailures () {
 	local FAILED_KNOWN_COUNT=$((FAILED_COUNT+KNOWN_COUNT-UNION_COUNT))
 	local FAILED_UNKNOWN_COUNT=$((UNION_COUNT-KNOWN_COUNT))
 
-	inform "About known failures (total ${KNOWN_COUNT}), see the file$( ((${#VKNOWN} > 1 )) && echo s ) below:"
+	inform "About known failures (total ${KNOWN_COUNT}), see the file$( ((${#VKNOWN[@]} > 1 )) && echo s ) below:"
 	for EACH_KNOWN in "${VKNOWN[@]}"; do
 		printf "  %s\n" "${EACH_KNOWN#${S}/}"
 	done
