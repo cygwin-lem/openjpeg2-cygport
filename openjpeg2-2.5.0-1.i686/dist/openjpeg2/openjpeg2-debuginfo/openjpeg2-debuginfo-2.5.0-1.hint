@@ -1,0 +1,7 @@
+category: Debug
+requires: cygwin-debuginfo
+external-source: openjpeg2
+sdesc: "Debug info for openjpeg2"
+ldesc: "This package contains files necessary for debugging the
+openjpeg2 package with gdb."
+
