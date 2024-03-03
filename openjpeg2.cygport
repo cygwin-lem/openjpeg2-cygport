@@ -1,7 +1,7 @@
 inherit cmake ninja
 
 NAME="openjpeg2"
-VERSION=2.5.0
+VERSION=2.5.2
 RELEASE=1
 CATEGORY="Libs"
 SUMMARY="JPEG 2000 codec"
@@ -10,6 +10,7 @@ in C language. It has been developed in order to promote the use of JPEG 2000,
 the new still-image compression standard from the Joint Photographic Experts
 Group (JPEG)."
 HOMEPAGE="http://www.openjpeg.org/"
+LICENSE="BSD-2-Clause"
 
 ################################
 ## Source from a git repository
@@ -17,6 +18,8 @@ HOMEPAGE="http://www.openjpeg.org/"
 GIT_REPO="https://github.com/uclouvain/openjpeg"
 declare -A GIT_DATEHASH_BY_NAME=(
   # git log -1 --date=iso-strict --format='%cd/%H'
+  [2.5.2]=2024-02-28T/v2.5.2
+  [2.5.1]=2024-02-26T15:17:28+01:00/v2.5.1
   [2.5.0]=2022-05-13T18:54:29+02:00/v2.5.0
   [2.4.0]=2020-12-28T21:59:39+01:00/37ac30ceff6640bbab502388c5e0fa0bff23f505
   [2.3.1p113]=2020-12-10T15:55:41+01:00/98a4c5c3709e0cc43b0a1c151ed5bd85a2d607fa
@@ -64,7 +67,7 @@ BUILD_REQUIRES="\
 ## Settings for CMake
 ################################
 CYGCMAKE_ARGS="
-	-DOPENJPEG_INSTALL_DOC_DIR:PATH=share/doc/${NAME}
+	-DCMAKE_INSTALL_DOCDIR=share/doc/${NAME}
 	${NOTYET+-DBUILD_MJ2=ON -DBUILD_JPWL=ON -DBUILD_JPIP=ON -DBUILD_JP3D=ON}
 	-DBUILD_DOC:BOOL=ON
 	-DWITH_ASTYLE:BOOL=ON
