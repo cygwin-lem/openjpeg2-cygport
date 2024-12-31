@@ -1,7 +1,7 @@
 inherit cmake ninja
 
 NAME="openjpeg2"
-VERSION=2.5.2
+VERSION=2.5.3
 RELEASE=1
 CATEGORY="Libs"
 SUMMARY="JPEG 2000 codec"
@@ -18,7 +18,8 @@ LICENSE="BSD-2-Clause"
 GIT_REPO="https://github.com/uclouvain/openjpeg"
 declare -A GIT_DATEHASH_BY_NAME=(
   # git log -1 --date=iso-strict --format='%cd/%H'
-  [2.5.2]=2024-02-28T/v2.5.2
+  [2.5.3]=2024-12-09T17:31:23+01:00/v2.5.3
+  [2.5.2]=2024-02-28T14:32:43+01:00/v2.5.2
   [2.5.1]=2024-02-26T15:17:28+01:00/v2.5.1
   [2.5.0]=2022-05-13T18:54:29+02:00/v2.5.0
   [2.4.0]=2020-12-28T21:59:39+01:00/37ac30ceff6640bbab502388c5e0fa0bff23f505
